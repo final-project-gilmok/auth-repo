@@ -1,4 +1,4 @@
-package kr.gilmok.auth.user.entity;
+package kr.gilmok.auth.auth.entity;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
