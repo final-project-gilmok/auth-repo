@@ -48,8 +48,8 @@ public class User {
     private User(String username, String passwordHash, String role, UserStatus status) {
         this.username = username;
         this.passwordHash = passwordHash;
-        this.role = "ROLE_USER";
-        this.status = UserStatus.ACTIVE;
+        this.role = (role != null) ? role : "ROLE_USER";
+        this.status = (status != null) ? status : UserStatus.ACTIVE;
     }
 
     public static User createNewUser(String username, String encodedPassword) {
