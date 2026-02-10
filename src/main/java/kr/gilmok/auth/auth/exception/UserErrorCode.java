@@ -8,7 +8,9 @@ import org.springframework.http.HttpStatus;
 @Getter
 @AllArgsConstructor
 public enum UserErrorCode implements ErrorCode {
-    DUPLICATE_USERNAME(HttpStatus.CONFLICT, "U001", "이미 존재하는 아이디입니다.");
+    DUPLICATE_USERNAME(HttpStatus.CONFLICT, "U001", "이미 존재하는 아이디입니다."),
+    PASSWORD_MISMATCH(HttpStatus.BAD_REQUEST, "U002", "비밀번호가 일치하지 않습니다."),
+    ;
 
     private final HttpStatus httpStatus;
     private final String code;

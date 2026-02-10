@@ -20,13 +20,24 @@ public class AuthService {
 
     @Transactional
     public void signup(SignupRequest request) {
-        userRepository.findByUsername(request.username()).ifPresent(user -> {
-            throw new CustomException(UserErrorCode.DUPLICATE_USERNAME);
-        });
+        validatePasswordMatch(request.password(), request.passwordConfirm());
+        validateDuplicateUsername(request.username());
 
         String encodedPassword = passwordEncoder.encode(request.password());
         User user = User.createNewUser(request.username(), encodedPassword);
 
         userRepository.save(user);
+    }
+
+    private void validatePasswordMatch(String password, String passwordConfirm) {
+        if (!password.equals(passwordConfirm)) {
+            throw new CustomException(UserErrorCode.PASSWORD_MISMATCH);
+        }
+    }
+
+    private void validateDuplicateUsername(String username) {
+        userRepository.findByUsername(username).ifPresent(user -> {
+            throw new CustomException(UserErrorCode.DUPLICATE_USERNAME);
+        });
     }
 }
