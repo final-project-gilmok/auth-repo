@@ -1,5 +1,7 @@
 package kr.gilmok.auth.auth.controller;
 
+import kr.gilmok.auth.auth.dto.LoginRequest;
+import kr.gilmok.auth.auth.dto.LoginResponse;
 import kr.gilmok.auth.auth.dto.SignupRequest;
 import kr.gilmok.auth.auth.service.AuthService;
 import kr.gilmok.common.dto.ApiResponse;
@@ -26,5 +28,12 @@ public class AuthController {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(ApiResponse.success("회원가입 완료"));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Validated @RequestBody LoginRequest request) {
+        LoginResponse response = authService.login(request);
+
+        return ResponseEntity.ok(ApiResponse.success(response));
     }
 }
