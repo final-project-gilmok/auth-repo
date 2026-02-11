@@ -1,3 +1,9 @@
+server:
+  port: 9000
+
 spring:
   application:
     name: auth
+
+  profiles:
+    active: dev # 기본 실행 시 application-dev.yml을 읽음 (로컬용)

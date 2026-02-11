@@ -1,0 +1,29 @@
+spring:
+  config:
+    activate:
+      on-profile: prod
+
+  # [운영 DB 설정] - 배포 시 환경 변수로 주입됨 (수정 금지)
+  datasource:
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # [운영 Redis 설정] - 배포 시 환경 변수로 주입됨 (수정 금지)
+  data:
+    redis:
+      host: ${SPRING_DATA_REDIS_HOST}
+      port: ${SPRING_DATA_REDIS_PORT}
+      password: ${SPRING_DATA_REDIS_PASSWORD}
+      ssl:
+        enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:true} # 기본값 true
+
+  # [JPA 설정] - 운영 환경 최적화
+  jpa:
+    hibernate:
+      ddl-auto: validate # 스키마 변경 금지
+    properties:
+      hibernate:
+        format_sql: false
+        show_sql: false
