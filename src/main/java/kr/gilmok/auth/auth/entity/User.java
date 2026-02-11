@@ -69,4 +69,8 @@ public class User {
                 .status(UserStatus.ACTIVE)
                 .build();
     }
+
+    public void updateLastLoginAt() {
+        this.lastLoginAt = LocalDateTime.now();
+    }
 }
