@@ -7,3 +7,12 @@ spring:
 
   profiles:
     active: dev # 기본 실행 시 application-dev.yml을 읽음 (로컬용)
+
+management:
+  tracing:
+    sampling:
+      probability: 1.0
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus, metrics # 메트릭은 항상 노출
