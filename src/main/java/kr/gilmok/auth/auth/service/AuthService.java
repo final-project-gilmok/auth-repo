@@ -71,10 +71,10 @@ public class AuthService {
 
         // 2. 인증 성공시 유저 정보 추출
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+        Long userId = userDetails.user().id();
 
         // 3. 접속 시간 업데이트
-        User user = userRepository.findByUsername(userDetails.getUsername())
-                .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
+        User user = userRepository.getReferenceById(userId);
         user.updateLastLoginAt();
 
         // 4. 토큰 발급
