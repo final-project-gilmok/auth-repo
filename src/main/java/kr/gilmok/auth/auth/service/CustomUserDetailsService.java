@@ -1,7 +1,7 @@
 package kr.gilmok.auth.auth.service;
 
 import kr.gilmok.auth.auth.entity.User;
-import kr.gilmok.auth.auth.exception.UserErrorCode;
+import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.UserRepository;
 import kr.gilmok.common.dto.AuthUserDto;
 import kr.gilmok.common.exception.CustomException;
@@ -23,7 +23,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(UserErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
 
         AuthUserDto authUserDto = new AuthUserDto(
                 user.getId(),
