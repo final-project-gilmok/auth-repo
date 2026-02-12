@@ -44,7 +44,7 @@ public class User {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @Builder
+    @Builder(access = AccessLevel.PRIVATE)
     private User(String username, String passwordHash, String role, UserStatus status) {
         this.username = username;
         this.passwordHash = passwordHash;
