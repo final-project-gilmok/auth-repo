@@ -1,8 +1,7 @@
 package kr.gilmok.auth.auth.controller;
 
-import kr.gilmok.auth.auth.dto.LoginRequest;
-import kr.gilmok.auth.auth.dto.LoginResponse;
-import kr.gilmok.auth.auth.dto.SignupRequest;
+import jakarta.servlet.http.HttpServletRequest;
+import kr.gilmok.auth.auth.dto.*;
 import kr.gilmok.auth.auth.service.AuthService;
 import kr.gilmok.common.dto.ApiResponse;
 import lombok.RequiredArgsConstructor;
@@ -31,9 +30,20 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@Validated @RequestBody LoginRequest request) {
-        LoginResponse response = authService.login(request);
+    public ResponseEntity<ApiResponse<LoginResponse>> login(@Validated @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+        String userAgent = httpRequest.getHeader("User-Agent");
+        LoginResponse response = authService.login(request, ip, userAgent);
 
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/reissue")
+    public ResponseEntity<TokenResponse> reissue(@Validated @RequestBody ReissueRequest request, HttpServletRequest httpRequest) {
+        String ip = httpRequest.getRemoteAddr();
+        String userAgent = httpRequest.getHeader("User-Agent");
+        TokenResponse response = authService.reissue(request.refreshToken(), ip, userAgent);
+
+        return ResponseEntity.ok(response);
     }
 }

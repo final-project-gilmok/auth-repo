@@ -22,6 +22,9 @@ public class JwtProvider {
     @Value("${app.jwt.access-expiration-ms}")
     private long accessExpTime;
 
+    @Value(("${app.jwt.refresh-expiration-ms}"))
+    private long refreshExpTime;
+
     private Key key;
 
     @PostConstruct
@@ -35,13 +38,22 @@ public class JwtProvider {
         claims.put("status", user.getStatus());
         claims.put("role", user.getRole());
 
-        Date now = new Date();
-        Date validity = new Date(now.getTime() + accessExpTime);
+        return buildToken(claims, accessExpTime);
+    }
 
+    public String createRefreshToken(User user) {
+        Claims claims = Jwts.claims().setSubject(user.getUsername());
+        claims.put("id", user.getId());
+
+        return buildToken(claims, refreshExpTime);
+    }
+
+    private String buildToken(Claims claims, long expTime) {
+        Date now = new Date();
         return Jwts.builder()
                 .setClaims(claims)
                 .setIssuedAt(now)
-                .setExpiration(validity)
+                .setExpiration(new Date(now.getTime() + expTime))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }

@@ -1,0 +1,64 @@
+package kr.gilmok.auth.auth.entity;
+
+import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "auth_sessions")
+@Getter
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class AuthSession {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 255)
+    private String refreshTokenHash;
+
+    private String createdIp;
+    private String userAgent;
+    private LocalDateTime issuedAt;
+    private LocalDateTime lastUsedAt;
+    private LocalDateTime expiresAt;
+    private LocalDateTime revokedAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @Builder(access = AccessLevel.PRIVATE)
+    private AuthSession(String refreshTokenHash, String createdIp, String userAgent, LocalDateTime expiresAt, User user) {
+        this.refreshTokenHash = refreshTokenHash;
+        this.createdIp = createdIp;
+        this.userAgent = userAgent;
+        this.issuedAt = LocalDateTime.now();
+        this.lastUsedAt = LocalDateTime.now();
+        this.expiresAt = expiresAt;
+        this.user = user;
+    }
+
+    public static AuthSession createSession(User user, String tokenHash, String ip, String userAgent, long expMs) {
+        return AuthSession.builder()
+                .user(user)
+                .refreshTokenHash(tokenHash)
+                .createdIp(ip)
+                .userAgent(userAgent)
+                .expiresAt(LocalDateTime.now().plusNanos(expMs * 1_000_000L))
+                .build();
+    }
+
+    // RTR: 기존 세션 무효화
+    public void revoke() {
+        this.revokedAt = LocalDateTime.now();
+    }
+
+    public void updateLastUsedAt() {
+        this.lastUsedAt = LocalDateTime.now();
+    }
+}
