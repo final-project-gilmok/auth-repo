@@ -21,15 +21,25 @@ public class AuthSession {
     @Column(nullable = false, length = 255)
     private String refreshTokenHash;
 
+    @Column(length = 45) // IPv6 대응
     private String createdIp;
+
+    @Column(length = 512) // 긴 User-Agent 대응
     private String userAgent;
+
+    @Column(nullable = false)
     private LocalDateTime issuedAt;
+
+    @Column(nullable = false)
     private LocalDateTime lastUsedAt;
+
+    @Column(nullable = false)
     private LocalDateTime expiresAt;
+
     private LocalDateTime revokedAt;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
+    @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     @Builder(access = AccessLevel.PRIVATE)
