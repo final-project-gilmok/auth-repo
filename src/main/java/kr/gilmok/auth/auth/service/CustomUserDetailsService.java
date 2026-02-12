@@ -1,10 +1,8 @@
 package kr.gilmok.auth.auth.service;
 
 import kr.gilmok.auth.auth.entity.User;
-import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.UserRepository;
 import kr.gilmok.common.dto.AuthUserDto;
-import kr.gilmok.common.exception.CustomException;
 import kr.gilmok.common.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,7 +21,7 @@ public class CustomUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new CustomException(AuthErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new UsernameNotFoundException("존재하지 않는 사용자입니다."));
 
         AuthUserDto authUserDto = new AuthUserDto(
                 user.getId(),
