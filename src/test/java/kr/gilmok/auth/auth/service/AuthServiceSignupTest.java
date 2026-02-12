@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
-public class AuthServiceTest {
+public class AuthServiceSignupTest {
 
     @InjectMocks
     private AuthService authService;
