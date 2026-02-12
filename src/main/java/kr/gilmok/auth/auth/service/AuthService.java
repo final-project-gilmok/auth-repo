@@ -96,7 +96,6 @@ public class AuthService {
 
         // 2. 만료 여부 확인
         if (oldSession.getExpiresAt().isBefore(LocalDateTime.now())) {
-            oldSession.revoke();
             throw new CustomException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         }
 
