@@ -14,6 +14,7 @@ import kr.gilmok.auth.global.util.HashUtil;
 import kr.gilmok.common.exception.CustomException;
 import kr.gilmok.common.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -34,6 +35,9 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final AuthSessionService authSessionService;
+
+    @Value("${app.jwt.access-expiration-ms}")
+    private long accessExpTime;
 
     @Transactional
     public void signup(SignupRequest request) {
@@ -79,7 +83,7 @@ public class AuthService {
 
         authSessionService.saveSession(user, refreshToken, ip, userAgent);
 
-        return new LoginResponse(accessToken, refreshToken, "Bearer", user.getUsername(), user.getRole());
+        return new LoginResponse(accessToken, refreshToken, accessExpTime, "Bearer", user.getUsername(), user.getRole());
     }
 
     // 재발급 (RTR): 기존 세션 무효화 후 새 토큰/세션 발급
