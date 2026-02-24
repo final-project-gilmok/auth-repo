@@ -68,7 +68,12 @@ public class AuthSession {
         this.revokedAt = LocalDateTime.now();
     }
 
-    public void updateLastUsedAt() {
-        this.lastUsedAt = LocalDateTime.now();
+    public void updateRefreshToken(String refreshTokenHash, Long refreshExpTime) {
+        LocalDateTime now = LocalDateTime.now();
+
+        this.refreshTokenHash = refreshTokenHash;
+        this.issuedAt = now;
+        this.lastUsedAt = now;
+        this.expiresAt = now.plusSeconds(refreshExpTime);
     }
 }
