@@ -21,10 +21,6 @@ public class AuthSessionService {
 
     @Transactional
     public void saveSession(User user, String refreshToken, String ip, String userAgent) {
-        // 새로운 로그인이 발생하면 해당 유저의 모든 기존 세션을 무효화
-        authSessionRepository.findAllByUserAndRevokedAtIsNull(user)
-                .forEach(AuthSession::revoke);
-
         String hashedRefreshToken = HashUtil.hash(refreshToken);
 
         AuthSession session = AuthSession.createSession(user, hashedRefreshToken, ip, userAgent, refreshExpTime);
