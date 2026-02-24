@@ -74,6 +74,6 @@ public class AuthSession {
         this.refreshTokenHash = refreshTokenHash;
         this.issuedAt = now;
         this.lastUsedAt = now;
-        this.expiresAt = now.plusSeconds(refreshExpTime);
+        this.expiresAt = now.plusNanos(refreshExpTime * 1_000_000L);
     }
 }
