@@ -20,11 +20,6 @@ public enum AuthErrorCode implements ErrorCode {
      */
     INVALID_REFRESH_TOKEN(HttpStatus.UNAUTHORIZED, "T001", "유효하지 않은 리프레시 토큰입니다."),
     REFRESH_TOKEN_EXPIRED(HttpStatus.UNAUTHORIZED, "T002", "리프레시 토큰이 만료되었습니다. 다시 로그인해주세요."),
-
-    /**
-     * 세션 관련 에러 (S)
-     */
-    INVALID_SESSION(HttpStatus.UNAUTHORIZED, "S001", "유효하지 않거나 상ㅌ태가 변경된 세션입니다."),
     ;
 
     private final HttpStatus httpStatus;

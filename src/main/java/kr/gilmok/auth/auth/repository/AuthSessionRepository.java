@@ -13,7 +13,6 @@ public interface AuthSessionRepository extends JpaRepository<AuthSession, Long> 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<AuthSession> findByRefreshTokenHashAndRevokedAtIsNull(String hash);
 
-    @Lock(LockModeType.PESSIMISTIC_WRITE)
     Optional<AuthSession> findByUserAndCreatedIpAndUserAgentAndRevokedAtIsNull(User user, String ip, String userAgent);
 
     List<AuthSession> findAllByUserAndRevokedAtIsNullOrderByIssuedAtAsc(User user);
