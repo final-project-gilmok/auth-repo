@@ -3,7 +3,7 @@ package kr.gilmok.auth.auth.service;
 import kr.gilmok.auth.auth.dto.SignupRequest;
 import kr.gilmok.auth.auth.entity.User;
 import kr.gilmok.auth.auth.entity.UserStatus;
-import kr.gilmok.auth.auth.exception.UserErrorCode;
+import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.UserRepository;
 import kr.gilmok.common.exception.CustomException;
 import org.junit.jupiter.api.DisplayName;
@@ -26,7 +26,7 @@ import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @ActiveProfiles("test")
-public class AuthServiceTest {
+public class AuthServiceSignupTest {
 
     @InjectMocks
     private AuthService authService;
@@ -68,8 +68,8 @@ public class AuthServiceTest {
         });
 
         // ErrorCode 규격 확인 (U001: DUPLICATE_USERNAME)
-        assertEquals(UserErrorCode.DUPLICATE_USERNAME.getCode(), exception.getErrorCode().getCode());
-        assertEquals(UserErrorCode.DUPLICATE_USERNAME.getMessage(), exception.getMessage());
+        assertEquals(AuthErrorCode.DUPLICATE_USERNAME.getCode(), exception.getErrorCode().getCode());
+        assertEquals(AuthErrorCode.DUPLICATE_USERNAME.getMessage(), exception.getMessage());
     }
 
     @Test

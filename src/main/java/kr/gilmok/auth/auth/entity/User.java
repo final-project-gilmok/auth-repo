@@ -44,7 +44,7 @@ public class User {
     @LastModifiedDate
     private LocalDateTime updatedAt;
 
-    @Builder
+    @Builder(access = AccessLevel.PRIVATE)
     private User(String username, String passwordHash, String role, UserStatus status) {
         this.username = username;
         this.passwordHash = passwordHash;
@@ -68,5 +68,9 @@ public class User {
                 .role("ROLE_ADMIN")
                 .status(UserStatus.ACTIVE)
                 .build();
+    }
+
+    public void updateLastLoginAt() {
+        this.lastLoginAt = LocalDateTime.now();
     }
 }

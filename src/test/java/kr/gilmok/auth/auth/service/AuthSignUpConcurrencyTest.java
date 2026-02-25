@@ -16,7 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @SpringBootTest
 @ActiveProfiles("test")
-public class AuthConcurrencyTest {
+public class AuthSignUpConcurrencyTest {
 
     @Autowired
     private AuthService authService;
