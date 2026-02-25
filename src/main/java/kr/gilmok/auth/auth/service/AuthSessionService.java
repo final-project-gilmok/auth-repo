@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -36,7 +37,8 @@ public class AuthSessionService {
         // 최적화: 방금 로그인한 기기가 이미 목록에 있다면 Upsert(수정)될 것이므로 개수가 늘어나지 않음.
         // 다른 기기에서 로그인해서 총 개수가 3개를 초과하게 될 때만 가장 오래된 세션 만료
         boolean isSameDeviceExists = activeSessions.stream()
-                .anyMatch(s -> s.getCreatedIp().equals(ip) && s.getUserAgent().equals(userAgent));
+                .anyMatch(s -> Objects.equals(s.getCreatedIp(), ip)
+                        && Objects.equals(s.getUserAgent(), userAgent));
 
         if (!isSameDeviceExists && activeSessions.size() >= 3) {
             AuthSession oldest = activeSessions.get(0);
