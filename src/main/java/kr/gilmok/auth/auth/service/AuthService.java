@@ -87,8 +87,7 @@ public class AuthService {
                 throw new CustomException(AuthErrorCode.PASSWORD_MISMATCH); // U002
             }
 
-            // 그 외 알 수 없는 인증 에러도 일관성 있게 처리하고 싶다면 커스텀 에러를 던지거나 원본 유지
-            throw e;
+            throw new CustomException(AuthErrorCode.USER_NOT_FOUND); // 또는 별도의 AUTHENTICATION_FAILED 에러코드 정의 권장
         }
 
         // 2. 인증 성공시 유저 정보 추출
