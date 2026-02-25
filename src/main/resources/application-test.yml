@@ -49,4 +49,4 @@ app:
   jwt:
     secret: this-is-a-very-long-and-secure-secret-key-for-test-12345
     access-expiration-ms: 1800000   # 30분
-    refresh-expiration-ms: 3600000  # 1시간
+    refresh-expiration-ms: 604800000  # 7일

@@ -11,6 +11,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -46,6 +47,9 @@ public class AuthSessionServiceConcurrencyTest {
         CountDownLatch readyLatch = new CountDownLatch(1); // 동시 출발을 위한 신호탄
         CountDownLatch doneLatch = new CountDownLatch(threadCount); // 모든 작업 완료 대기
 
+        //  스레드 내부에서 발생하는 예외를 안전하게 수집할 큐
+        ConcurrentLinkedQueue<Throwable> errors = new ConcurrentLinkedQueue<>();
+
         // when
         for (int i = 0; i < threadCount; i++) {
             final int index = i;
@@ -58,7 +62,8 @@ public class AuthSessionServiceConcurrencyTest {
                     authSessionService.saveSession(threadUser, "token-" + index, ip, userAgent);
 
                 } catch (Exception e) {
-                    System.err.println("Thread Exception: " + e.getMessage());
+                    // 예외를 출력만 하지 않고 큐에 담아 메인 스레드로 전달
+                    errors.add(e);
                 } finally {
                     doneLatch.countDown(); // 작업 완료 보고
                 }
@@ -70,6 +75,9 @@ public class AuthSessionServiceConcurrencyTest {
         executorService.shutdown();
 
         // then
+        // 비동기 작업 중 발생한 예외가 단 하나도 없어야 함을 확실하게 검증
+        assertThat(errors).as("스레드 실행 중 예외가 발생했습니다").isEmpty();
+
         User finalUser = userRepository.findById(userId).orElseThrow();
         List<AuthSession> sessions = authSessionRepository.findAllActiveSessionsByUser(finalUser);
 
