@@ -91,7 +91,7 @@ public class AuthService {
     public TokenResponse reissue(String oldRefreshToken, String ip, String userAgent) {
         // 1. 토큰 해싱 후 DB 조회
         String oldHash = HashUtil.hash(oldRefreshToken);
-        AuthSession oldSession = authSessionRepository.findByRefreshTokenHashAndRevokedAtIsNull(oldHash)
+        AuthSession oldSession = authSessionRepository.findByRefreshTokenHashAndActive(oldHash)
                 .orElseThrow(() -> new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN));
 
         // 2. 만료 여부 확인
