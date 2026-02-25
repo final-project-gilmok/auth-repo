@@ -19,8 +19,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.test.context.ActiveProfiles;
 
-import java.util.Optional;
-
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -66,8 +64,10 @@ public class AuthServiceLoginTest {
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null);
         given(authenticationManager.authenticate(any())).willReturn(authentication);
 
-        // (2) 유저 조회 및 토큰 생성 모킹
-        given(userRepository.findByUsername(username)).willReturn(Optional.of(user));
+        // 2. 실제 서비스 로직이 사용하는 getReferenceById를 모킹
+        // getReferenceById는 Optional이 아니라 객체 자체를 반환하므로 Optional.of()를 해야 함
+        given(userRepository.getReferenceById(user.getId())).willReturn(user);
+
         given(jwtProvider.createAccessToken(user)).willReturn("access-token");
         given(jwtProvider.createRefreshToken(user)).willReturn("refresh-token");
 
@@ -79,8 +79,9 @@ public class AuthServiceLoginTest {
                 () -> assertThat(response.accessToken()).isEqualTo("access-token"),
                 () -> assertThat(response.refreshToken()).isEqualTo("refresh-token"),
                 () -> assertThat(response.username()).isEqualTo(username),
-                // (3) 비즈니스 로직 호출 검증
-                () -> verify(userRepository).findByUsername(username),
+
+                // 3. 검증 로직도 getReferenceById가 호출되었는지 확인하는 것으로 변경
+                () -> verify(userRepository).getReferenceById(user.getId()),
                 () -> verify(authSessionService).saveSession(eq(user), eq("refresh-token"), eq(ip), eq(userAgent))
         );
     }
