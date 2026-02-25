@@ -5,13 +5,15 @@ import kr.gilmok.auth.auth.entity.User;
 import kr.gilmok.auth.auth.repository.AuthSessionRepository;
 import kr.gilmok.auth.global.util.HashUtil;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
@@ -19,36 +21,29 @@ public class AuthSessionService {
 
     private final AuthSessionRepository authSessionRepository;
 
-    @Value(("${app.jwt.refresh-expiration-ms}"))
+    @Value("${app.jwt.refresh-expiration-ms}")
     private long refreshExpTime;
 
     @Transactional
     public void saveSession(User user, String refreshToken, String ip, String userAgent) {
         String hashedRefreshToken = HashUtil.hash(refreshToken);
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime expiresAt = now.plusNanos(refreshExpTime * 1_000_000L);
 
-        // 1. 동일 기기(IP + UA)에서 온 활성 세션이 있는지 확인
-        Optional<AuthSession> existingSameDeviceSession = authSessionRepository
-                .findByUserAndCreatedIpAndUserAgentAndRevokedAtIsNull(user, ip, userAgent);
+        // 1. 현재 활성 세션 개수 체크 (오래된 순 정렬)
+        List<AuthSession> activeSessions = authSessionRepository.findAllActiveSessionsByUser(user);
 
-        if (existingSameDeviceSession.isPresent()) {
-            // 동일 기기라면 기존 레코드를 갱신
-            AuthSession session = existingSameDeviceSession.get();
-            session.updateRefreshToken(hashedRefreshToken, refreshExpTime);
-            return; // 갱신 후 종료
-        }
+        // 최적화: 방금 로그인한 기기가 이미 목록에 있다면 Upsert(수정)될 것이므로 개수가 늘어나지 않음.
+        // 다른 기기에서 로그인해서 총 개수가 3개를 초과하게 될 때만 가장 오래된 세션 만료
+        boolean isSameDeviceExists = activeSessions.stream()
+                .anyMatch(s -> s.getCreatedIp().equals(ip) && s.getUserAgent().equals(userAgent));
 
-        // 2. 새로운 기기인 경우, 현재 활성 세션 개수 체크 (오래된 순 정렬)
-        List<AuthSession> activeSessions = authSessionRepository
-                .findAllByUserAndRevokedAtIsNullOrderByIssuedAtAsc(user);
-
-        // 계정당 최대 개수 제한 3개
-        if (activeSessions.size() >= 3) {
+        if (!isSameDeviceExists && activeSessions.size() >= 3) {
             AuthSession oldest = activeSessions.get(0);
-            oldest.revoke(); // 가장 오래된 세션 만료
+            oldest.revoke(); // JPA 변경 감지(Dirty Checking)로 UPDATE 쿼리 발생
         }
 
-        // 3. 신규 세션 저장
-        AuthSession newSession = AuthSession.createSession(user, hashedRefreshToken, ip, userAgent, refreshExpTime);
-        authSessionRepository.save(newSession);
+        // 2. Native Query 한 방으로 삽입 또는 갱신 (DB 엔진이 동시성 완벽 제어)
+        authSessionRepository.upsertAuthSession(user.getId(), hashedRefreshToken, ip, userAgent, now, expiresAt);
     }
 }

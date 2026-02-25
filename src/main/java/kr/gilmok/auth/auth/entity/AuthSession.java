@@ -9,7 +9,10 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "auth_sessions")
+@Table(name = "auth_sessions", uniqueConstraints = {
+        @UniqueConstraint(name = "uk_auth_session_device", columnNames = {"user_id", "created_ip", "user_agent",
+                "revoked_at"})
+})
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AuthSession {
@@ -36,7 +39,8 @@ public class AuthSession {
     @Column(nullable = false)
     private LocalDateTime expiresAt;
 
-    private LocalDateTime revokedAt;
+    @Column(nullable = false)
+    private LocalDateTime revokedAt = LocalDateTime.of(1970, 1, 1, 0, 0);
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
