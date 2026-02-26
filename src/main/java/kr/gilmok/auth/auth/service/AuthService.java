@@ -1,5 +1,6 @@
 package kr.gilmok.auth.auth.service;
 
+import io.micrometer.core.instrument.MeterRegistry;
 import kr.gilmok.auth.auth.dto.LoginRequest;
 import kr.gilmok.auth.auth.dto.LoginResponse;
 import kr.gilmok.auth.auth.dto.SignupRequest;
@@ -12,12 +13,16 @@ import kr.gilmok.auth.auth.repository.UserRepository;
 import kr.gilmok.auth.global.Jwt.JwtProvider;
 import kr.gilmok.auth.global.util.HashUtil;
 import kr.gilmok.common.exception.CustomException;
+import kr.gilmok.common.exception.GlobalErrorCode;
 import kr.gilmok.common.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,6 +40,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtProvider jwtProvider;
     private final AuthSessionService authSessionService;
+    private final MeterRegistry meterRegistry;
 
     @Value("${app.jwt.access-expiration-ms}")
     private long accessExpTime;
@@ -64,10 +70,26 @@ public class AuthService {
 
     @Transactional
     public LoginResponse login(LoginRequest request, String ip, String userAgent) {
-        // 1. Spring Security 표준 인증 시도
-        Authentication authentication = authenticationManager.authenticate( // -> CustomUserDetailsService 실행
-                new UsernamePasswordAuthenticationToken(request.username(), request.password())
-        );
+        Authentication authentication;
+
+        try {
+            // 1. Spring Security 표준 인증 시도
+            authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.username(), request.password())
+            );
+        } catch (AuthenticationException e) {
+            // 2️⃣ 로그인 실패 메트릭 증가
+            meterRegistry.counter("auth.login.failure").increment();
+
+            // 3️⃣ Spring Security의 예외를 우리의 CustomException으로 예쁘게 변환
+            if (e instanceof UsernameNotFoundException || e.getCause() instanceof UsernameNotFoundException) {
+                throw new CustomException(AuthErrorCode.USER_NOT_FOUND); // U003
+            } else if (e instanceof BadCredentialsException) {
+                throw new CustomException(AuthErrorCode.PASSWORD_MISMATCH); // U002
+            }
+
+            throw new CustomException(GlobalErrorCode.INVALID_USER);
+        }
 
         // 2. 인증 성공시 유저 정보 추출
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
@@ -82,6 +104,9 @@ public class AuthService {
         String refreshToken = jwtProvider.createRefreshToken(user);
 
         authSessionService.saveSession(user, refreshToken, ip, userAgent);
+
+        // 4️⃣ 로그인 및 세션 발급 완료 시 성공 메트릭 증가
+        meterRegistry.counter("auth.login.success").increment();
 
         return new LoginResponse(accessToken, refreshToken, accessExpTime, "Bearer", user.getUsername(), user.getRole());
     }
