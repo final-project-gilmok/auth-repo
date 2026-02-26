@@ -13,6 +13,7 @@ import kr.gilmok.auth.auth.repository.UserRepository;
 import kr.gilmok.auth.global.Jwt.JwtProvider;
 import kr.gilmok.auth.global.util.HashUtil;
 import kr.gilmok.common.exception.CustomException;
+import kr.gilmok.common.exception.GlobalErrorCode;
 import kr.gilmok.common.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -87,7 +88,7 @@ public class AuthService {
                 throw new CustomException(AuthErrorCode.PASSWORD_MISMATCH); // U002
             }
 
-            throw new CustomException(AuthErrorCode.USER_NOT_FOUND); // 또는 별도의 AUTHENTICATION_FAILED 에러코드 정의 권장
+            throw new CustomException(GlobalErrorCode.INVALID_USER);
         }
 
         // 2. 인증 성공시 유저 정보 추출
