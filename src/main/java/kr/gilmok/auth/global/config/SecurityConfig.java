@@ -27,7 +27,8 @@ public class SecurityConfig extends CommonSecurityConfig {
     protected void configureRequestMatchers(
             AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
         auth.requestMatchers("/auth/signup", "/auth/login", "/auth/reissue").permitAll()
-            .requestMatchers(HttpMethod.GET, "/actuator/prometheus", "/actuator/health").permitAll();
+            .requestMatchers(HttpMethod.GET, "/actuator/prometheus", "/actuator/health").permitAll()
+            .requestMatchers("/error").permitAll();  // 404 등 에러 응답 시 forward되는 경로
     }
 
     @Bean
