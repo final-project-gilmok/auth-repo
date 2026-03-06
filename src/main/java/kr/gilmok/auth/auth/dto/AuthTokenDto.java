@@ -1,7 +1,9 @@
 package kr.gilmok.auth.auth.dto;
 
-public record LoginResponse(
+public record AuthTokenDto(
         long accessTokenExpiresIn,
+        String accessToken,
+        String refreshToken,
         String username,
         String role
 ) {

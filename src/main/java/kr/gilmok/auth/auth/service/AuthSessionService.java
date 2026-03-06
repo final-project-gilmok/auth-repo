@@ -46,6 +46,7 @@ public class AuthSessionService {
         }
 
         // 2. Native Query 한 방으로 삽입 또는 갱신 (DB 엔진이 동시성 완벽 제어)
-        authSessionRepository.upsertAuthSession(user.getId(), hashedRefreshToken, ip, userAgent, now, expiresAt);
+        authSessionRepository.upsertAuthSession(user.getId(), hashedRefreshToken, ip, userAgent, now, expiresAt,
+                AuthSessionRepository.ACTIVE_TIME);
     }
 }
