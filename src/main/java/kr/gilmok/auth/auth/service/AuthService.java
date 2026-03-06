@@ -1,10 +1,9 @@
 package kr.gilmok.auth.auth.service;
 
 import io.micrometer.core.instrument.MeterRegistry;
+import kr.gilmok.auth.auth.dto.AuthTokenDto;
 import kr.gilmok.auth.auth.dto.LoginRequest;
-import kr.gilmok.auth.auth.dto.LoginResponse;
 import kr.gilmok.auth.auth.dto.SignupRequest;
-import kr.gilmok.auth.auth.dto.TokenResponse;
 import kr.gilmok.auth.auth.entity.AuthSession;
 import kr.gilmok.auth.auth.entity.User;
 import kr.gilmok.auth.auth.exception.AuthErrorCode;
@@ -69,7 +68,7 @@ public class AuthService {
     }
 
     @Transactional
-    public LoginResponse login(LoginRequest request, String ip, String userAgent) {
+    public AuthTokenDto login(LoginRequest request, String ip, String userAgent) {
         Authentication authentication;
 
         try {
@@ -108,12 +107,12 @@ public class AuthService {
         // 4️⃣ 로그인 및 세션 발급 완료 시 성공 메트릭 증가
         meterRegistry.counter("auth.login.success").increment();
 
-        return new LoginResponse(accessToken, refreshToken, accessExpTime, "Bearer", user.getUsername(), user.getRole());
+        return new AuthTokenDto(accessExpTime, accessToken, refreshToken, user.getUsername(), user.getRole());
     }
 
     // 재발급 (RTR): 기존 세션 무효화 후 새 토큰/세션 발급
     @Transactional
-    public TokenResponse reissue(String oldRefreshToken, String ip, String userAgent) {
+    public AuthTokenDto reissue(String oldRefreshToken, String ip, String userAgent) {
         // 1. 토큰 해싱 후 DB 조회
         String oldHash = HashUtil.hash(oldRefreshToken);
         AuthSession oldSession = authSessionRepository.findByRefreshTokenHashAndActive(oldHash)
@@ -134,6 +133,6 @@ public class AuthService {
 
         authSessionService.saveSession(user, newRefreshToken, ip, userAgent);
 
-        return new TokenResponse(newAccessToken, newRefreshToken, "Bearer");
+        return new AuthTokenDto(accessExpTime, newAccessToken, newRefreshToken, user.getUsername(), user.getRole());
     }
 }

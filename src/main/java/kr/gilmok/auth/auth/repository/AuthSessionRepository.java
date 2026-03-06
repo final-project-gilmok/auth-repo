@@ -23,7 +23,6 @@ public interface AuthSessionRepository extends JpaRepository<AuthSession, Long> 
 
     List<AuthSession> findAllByUserAndRevokedAtOrderByIssuedAtAsc(User user, LocalDateTime revokedAt);
 
-
     // Service에서 호출할 Default 메서드 (상수 자동 주입)
     default Optional<AuthSession> findByRefreshTokenHashAndActive(String hash) {
         return findByRefreshTokenHashAndRevokedAt(hash, ACTIVE_TIME);
@@ -37,7 +36,7 @@ public interface AuthSessionRepository extends JpaRepository<AuthSession, Long> 
     @Modifying
     @Query(value = """
             INSERT INTO auth_sessions (user_id, refresh_token_hash, created_ip, user_agent, issued_at, last_used_at, expires_at, revoked_at)
-            VALUES (:userId, :tokenHash, :ip, :userAgent, :now, :now, :expiresAt, '1970-01-01 00:00:00')
+            VALUES (:userId, :tokenHash, :ip, :userAgent, :now, :now, :expiresAt, :revokedAt)
             ON DUPLICATE KEY UPDATE
                 refresh_token_hash = VALUES(refresh_token_hash),
                 issued_at = VALUES(issued_at),
@@ -50,6 +49,6 @@ public interface AuthSessionRepository extends JpaRepository<AuthSession, Long> 
             @Param("ip") String ip,
             @Param("userAgent") String userAgent,
             @Param("now") LocalDateTime now,
-            @Param("expiresAt") LocalDateTime expiresAt
-    );
+            @Param("expiresAt") LocalDateTime expiresAt,
+            @Param("revokedAt") LocalDateTime revokedAt);
 }
