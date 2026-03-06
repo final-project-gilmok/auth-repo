@@ -29,6 +29,9 @@ public class JwtProvider {
 
     @PostConstruct
     protected void init() {
+        if (secretKey == null || secretKey.getBytes(StandardCharsets.UTF_8).length < 32) {
+         throw new IllegalStateException("app.jwt.secret must be at least 32 bytes for HS256");
+        }
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
     }
 
