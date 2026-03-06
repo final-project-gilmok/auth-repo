@@ -28,12 +28,7 @@ public class JwtProvider {
     private Key key;
 
     @PostConstruct
-    protected void init() {
-        if (secretKey == null || secretKey.getBytes(StandardCharsets.UTF_8).length < 32) {
-         throw new IllegalStateException("app.jwt.secret must be at least 32 bytes for HS256");
-        }
-        this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
-    }
+    protected void init() {this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));}
 
     public String createAccessToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getUsername());
