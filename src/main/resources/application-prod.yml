@@ -33,3 +33,9 @@ management:
     tracing:
       endpoint: http://tempo:4317 # ← gRPC 포트
       transport: grpc
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}  # api-repo와 동일한 값!
+    access-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS}
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS}
