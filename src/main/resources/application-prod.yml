@@ -33,3 +33,9 @@ management:
     tracing:
       endpoint: http://tempo:4318/v1/traces
       transport: http # [추가] 명시적으로 HTTP 프로토콜 사용 선언 dev에도 동일하게 선언이 필요
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}  # api-repo와 동일한 값!
+    access-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS}
+    refresh-expiration-ms: ${JWT_REFRESH_EXPIRATION_MS}

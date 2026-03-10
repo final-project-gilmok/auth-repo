@@ -28,9 +28,7 @@ public class JwtProvider {
     private Key key;
 
     @PostConstruct
-    protected void init() {
-        this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
-    }
+    protected void init() {this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));}
 
     public String createAccessToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getUsername());
