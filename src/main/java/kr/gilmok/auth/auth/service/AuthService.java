@@ -125,6 +125,7 @@ public class AuthService {
 
         // 3. 기존 세션 무효화
         oldSession.revoke();
+        authSessionRepository.flush();
 
         // 4. 새로운 토큰 및 세션 생성
         User user = oldSession.getUser();
