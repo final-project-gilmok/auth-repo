@@ -1,0 +1,52 @@
+spring:
+  application:
+    name: auth-service-test
+
+  # 1. 테스트용 메모리 DB 설정 (MySQL 모드)
+  datasource:
+    url: jdbc:h2:mem:testdb;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # 2. JPA 설정: 테스트마다 테이블 생성 후 삭제
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.H2Dialect
+
+  # 3. 외부 인프라 의존성 제거 (테스트 실패 방지)
+  data:
+    redis:
+      repositories:
+        enabled: false # Redis Repository 기능 비활성화
+  rabbitmq:
+    listener:
+      type: simple
+      auto-startup: false # RabbitMQ 자동 시작 방지
+
+  # 4. 보안 설정 (필요시 테스트 프로필 분리)
+  security:
+    user:
+      name: test
+      password: password
+
+# 5. 테스트 포트 설정 (0으로 설정 시 랜덤 포트 사용)
+server:
+  port: 0
+
+logging:
+  level:
+    kr.gilmok.auth: DEBUG
+
+app:
+  cors:
+    allowed-origins: "http://localhost:3000"
+  jwt:
+    secret: this-is-a-very-long-and-secure-secret-key-for-test-12345
+    access-expiration-ms: 1800000   # 30분
+    refresh-expiration-ms: 604800000  # 7일
