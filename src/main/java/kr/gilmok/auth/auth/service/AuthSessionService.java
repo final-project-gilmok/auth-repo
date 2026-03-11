@@ -43,10 +43,12 @@ public class AuthSessionService {
         if (!isSameDeviceExists && activeSessions.size() >= 3) {
             AuthSession oldest = activeSessions.get(0);
             oldest.revoke(); // JPA 변경 감지(Dirty Checking)로 UPDATE 쿼리 발생
+            log.info("기기 활성 세션 초과 (3개 이상) - 가장 오래된 세션 무효화 (userId: {}, ip: {})", user.getId(), oldest.getCreatedIp());
         }
 
         // 2. Native Query 한 방으로 삽입 또는 갱신 (DB 엔진이 동시성 완벽 제어)
         authSessionRepository.upsertAuthSession(user.getId(), hashedRefreshToken, ip, userAgent, now, expiresAt,
                 AuthSessionRepository.ACTIVE_TIME);
+        log.debug("세션 저장/갱신 완료 (userId: {}, ip: {})", user.getId(), ip);
     }
 }

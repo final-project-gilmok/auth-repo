@@ -15,6 +15,7 @@ import kr.gilmok.common.exception.CustomException;
 import kr.gilmok.common.exception.GlobalErrorCode;
 import kr.gilmok.common.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -28,6 +29,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+@Slf4j
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -54,6 +56,7 @@ public class AuthService {
         User user = User.createNewUser(request.username(), encodedPassword);
 
         userRepository.save(user);
+        log.info("회원가입 완료 - username: {}", user.getUsername());
     }
 
     private void validatePasswordMatch(String password, String passwordConfirm) {
@@ -79,6 +82,7 @@ public class AuthService {
         } catch (AuthenticationException e) {
             // 2️⃣ 로그인 실패 메트릭 증가
             meterRegistry.counter("auth.login.failure").increment();
+            log.warn("로그인 실패 - username: {}, reason: {}", request.username(), e.getMessage());
 
             // 3️⃣ Spring Security의 예외를 우리의 CustomException으로 예쁘게 변환
             if (e instanceof UsernameNotFoundException || e.getCause() instanceof UsernameNotFoundException) {
@@ -106,6 +110,7 @@ public class AuthService {
 
         // 4️⃣ 로그인 및 세션 발급 완료 시 성공 메트릭 증가
         meterRegistry.counter("auth.login.success").increment();
+        log.info("로그인 성공 - username: {}, ip: {}", user.getUsername(), ip);
 
         return new AuthTokenDto(accessExpTime, accessToken, refreshToken, user.getUsername(), user.getRole());
     }
@@ -116,7 +121,10 @@ public class AuthService {
         // 1. 토큰 해싱 후 DB 조회
         String oldHash = tokenHashEncoder.encode(oldRefreshToken);
         AuthSession oldSession = authSessionRepository.findByRefreshTokenHashAndActive(oldHash)
-                .orElseThrow(() -> new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN));
+                .orElseThrow(() -> {
+                    log.warn("재발급 실패 - 유효하지 않은 리프레시 토큰 시도 (ip: {})", ip);
+                    return new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN);
+                });
 
         // 2. 만료 여부 확인 (DDD 관점: 서비스 레이어가 아닌 엔티티에 행위 위임)
         oldSession.validateExpiration(LocalDateTime.now());
@@ -131,6 +139,8 @@ public class AuthService {
         String newRefreshToken = tokenProvider.createRefreshToken(user);
 
         authSessionService.saveSession(user, newRefreshToken, ip, userAgent);
+
+        log.info("토큰 재발급 성공 - username: {}, ip: {}", user.getUsername(), ip);
 
         return new AuthTokenDto(accessExpTime, newAccessToken, newRefreshToken, user.getUsername(), user.getRole());
     }
