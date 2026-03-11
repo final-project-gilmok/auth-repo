@@ -52,6 +52,7 @@ public class AuthSignUpConcurrencyTest {
 
         readyLatch.countDown(); // 시작 신호
         doneLatch.await(); // 모든 스레드의 작업이 끝날 때까지 대기
+        executorService.shutdown();
 
         // then
         assertEquals(1, successCount.get(), "성공한 가입은 1건이어야 합니다.");
