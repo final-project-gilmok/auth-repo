@@ -1,11 +1,15 @@
 package kr.gilmok.auth.auth.service;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import kr.gilmok.auth.auth.dto.AuthTokenDto;
 import kr.gilmok.auth.auth.dto.LoginRequest;
-import kr.gilmok.auth.auth.dto.LoginResponse;
 import kr.gilmok.auth.auth.entity.User;
+import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.UserRepository;
 import kr.gilmok.auth.global.Jwt.JwtProvider;
 import kr.gilmok.common.dto.AuthUserDto;
+import kr.gilmok.common.exception.CustomException;
 import kr.gilmok.common.security.CustomUserDetails;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,8 +26,7 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertAll;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
@@ -45,6 +48,12 @@ public class AuthServiceLoginTest {
 
     @Mock
     private AuthSessionService authSessionService;
+
+    @Mock
+    private MeterRegistry meterRegistry;
+
+    @Mock
+    private Counter counter;
 
     @Test
     @DisplayName("로그인 성공 시 토큰을 발급하고 세션을 저장한다")
@@ -70,9 +79,10 @@ public class AuthServiceLoginTest {
 
         given(jwtProvider.createAccessToken(user)).willReturn("access-token");
         given(jwtProvider.createRefreshToken(user)).willReturn("refresh-token");
+        given(meterRegistry.counter(anyString())).willReturn(counter);
 
         // when
-        LoginResponse response = authService.login(request, ip, userAgent);
+        AuthTokenDto response = authService.login(request, ip, userAgent);
 
         // then
         assertAll(
@@ -82,8 +92,7 @@ public class AuthServiceLoginTest {
 
                 // 3. 검증 로직도 getReferenceById가 호출되었는지 확인하는 것으로 변경
                 () -> verify(userRepository).getReferenceById(user.getId()),
-                () -> verify(authSessionService).saveSession(eq(user), eq("refresh-token"), eq(ip), eq(userAgent))
-        );
+                () -> verify(authSessionService).saveSession(eq(user), eq("refresh-token"), eq(ip), eq(userAgent)));
     }
 
     @Test
@@ -93,9 +102,12 @@ public class AuthServiceLoginTest {
         LoginRequest request = new LoginRequest("wrongUser", "wrongPassword");
         given(authenticationManager.authenticate(any()))
                 .willThrow(new BadCredentialsException("인증 실패"));
+        given(meterRegistry.counter(anyString())).willReturn(counter);
 
         // when & then
         assertThatThrownBy(() -> authService.login(request, "ip", "agent"))
-                .isInstanceOf(BadCredentialsException.class);
+                .isInstanceOf(CustomException.class)
+                .extracting("errorCode")
+                .isEqualTo(AuthErrorCode.PASSWORD_MISMATCH);
     }
 }
