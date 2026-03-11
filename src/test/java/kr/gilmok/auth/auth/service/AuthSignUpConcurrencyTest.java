@@ -27,11 +27,11 @@ public class AuthSignUpConcurrencyTest {
         // given
         int threadCount = 10;
         ExecutorService executorService = Executors.newFixedThreadPool(32);
-        CountDownLatch latch = new CountDownLatch(threadCount); // 모든 스레드가 동시에 시작하도록 대기
+        CountDownLatch readyLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
 
         SignupRequest request = new SignupRequest("duplicateUser", "password123!", "password123!");
 
-        // 성공과 실패 카운트를 측정하기 위한 원자적 변수
         AtomicInteger successCount = new AtomicInteger();
         AtomicInteger failCount = new AtomicInteger();
 
@@ -39,17 +39,19 @@ public class AuthSignUpConcurrencyTest {
         for (int i = 0; i < threadCount; i++) {
             executorService.execute(() -> {
                 try {
+                    readyLatch.await(); // 대기
                     authService.signup(request);
                     successCount.getAndIncrement();
                 } catch (Exception e) {
                     failCount.getAndIncrement();
                 } finally {
-                    latch.countDown();
+                    doneLatch.countDown();
                 }
             });
         }
 
-        latch.await(); // 모든 스레드의 작업이 끝날 때까지 대기
+        readyLatch.countDown(); // 시작 신호
+        doneLatch.await(); // 모든 스레드의 작업이 끝날 때까지 대기
 
         // then
         assertEquals(1, successCount.get(), "성공한 가입은 1건이어야 합니다.");
