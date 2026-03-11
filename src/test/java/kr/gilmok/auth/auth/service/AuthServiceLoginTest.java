@@ -73,8 +73,7 @@ public class AuthServiceLoginTest {
         Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null);
         given(authenticationManager.authenticate(any())).willReturn(authentication);
 
-        // 2. 실제 서비스 로직이 사용하는 getReferenceById를 모킹
-        // getReferenceById는 Optional이 아니라 객체 자체를 반환하므로 Optional.of()를 해야 함
+        // 2. 실제 서비스 로직이 사용하는 getReferenceById를 모킹 (프록시 객체 반환)
         given(userRepository.getReferenceById(user.getId())).willReturn(user);
 
         given(jwtProvider.createAccessToken(user)).willReturn("access-token");
@@ -109,5 +108,7 @@ public class AuthServiceLoginTest {
                 .isInstanceOf(CustomException.class)
                 .extracting("errorCode")
                 .isEqualTo(AuthErrorCode.PASSWORD_MISMATCH);
+
+        verify(counter).increment();
     }
 }

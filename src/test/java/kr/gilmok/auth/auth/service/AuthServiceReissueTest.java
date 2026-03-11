@@ -90,13 +90,15 @@ public class AuthServiceReissueTest {
         given(jwtProvider.createRefreshToken(testUser)).willReturn(newRefreshToken);
 
         // when
+        assertThat(validSession.getRevokedAt()).isEqualTo(AuthSessionRepository.ACTIVE_TIME);
+
         AuthTokenDto response = authService.reissue(oldRefreshToken, ip, userAgent);
 
         // then
         assertThat(response.accessToken()).isEqualTo(newAccessToken);
         assertThat(response.refreshToken()).isEqualTo(newRefreshToken);
         assertThat(response.username()).isEqualTo(testUser.getUsername());
-        assertThat(validSession.getRevokedAt()).isNotNull(); // 기존 세션이 무효화 되었는지 확인
+        assertThat(validSession.getRevokedAt()).isAfter(AuthSessionRepository.ACTIVE_TIME); // 기존 세션이 무효화 되었는지 확인
 
         verify(authSessionRepository).flush();
         verify(authSessionService).saveSession(eq(testUser), eq(newRefreshToken), eq(ip), eq(userAgent));

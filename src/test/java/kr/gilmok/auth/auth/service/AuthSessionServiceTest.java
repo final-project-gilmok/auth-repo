@@ -75,7 +75,7 @@ public class AuthSessionServiceTest {
 
         // then
         // 기존 세션이 revoke 되지 않았음을 확인 (revokedAt이 1970-01-01 그대로인지)
-        assertThat(existingSession.getRevokedAt()).isEqualTo(LocalDateTime.of(1970, 1, 1, 0, 0));
+        assertThat(existingSession.getRevokedAt()).isEqualTo(AuthSessionRepository.ACTIVE_TIME);
 
         // upsert 호출 여부 검증
         String hashedToken = HashUtil.hash(refreshToken);
