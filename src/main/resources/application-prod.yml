@@ -22,7 +22,7 @@ spring:
   # [JPA 설정] - 운영 환경 최적화
   jpa:
     hibernate:
-      ddl-auto: validate # 스키마 변경 금지
+      ddl-auto: update # 스키마 변경 금지
     properties:
       hibernate:
         format_sql: false
