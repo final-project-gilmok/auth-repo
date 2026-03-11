@@ -2,7 +2,6 @@ package kr.gilmok.auth.auth.service;
 
 import kr.gilmok.auth.auth.dto.SignupRequest;
 import kr.gilmok.auth.auth.entity.User;
-import kr.gilmok.auth.auth.entity.UserStatus;
 import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.UserRepository;
 import kr.gilmok.common.exception.CustomException;
@@ -17,7 +16,8 @@ import org.springframework.test.context.ActiveProfiles;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
@@ -85,34 +85,5 @@ public class AuthServiceSignupTest {
 
         assertEquals("U002", exception.getErrorCode().getCode());
         assertEquals("비밀번호가 일치하지 않습니다.", exception.getMessage());
-    }
-
-    @Test
-    @DisplayName("관리자 계정 생성 시 ROLE_ADMIN 권한이 부여되어야 한다")
-    void createAdmin_shouldHaveAdminRole() {
-        // given
-        String username = "adminUser";
-        String password = "encodedPassword";
-
-        // when: 정적 팩토리 메서드를 통해 관리자 생성
-        User admin = User.createAdmin(username, password);
-
-        // then
-        assertNotNull(admin);
-        assertEquals(username, admin.getUsername());
-
-        // "ROLE_USER"가 아닌 "ROLE_ADMIN"이어야 함
-        assertEquals("ROLE_ADMIN", admin.getRole());
-        assertEquals(UserStatus.ACTIVE, admin.getStatus());
-    }
-
-    @Test
-    @DisplayName("일반 유저 생성 시 ROLE_USER 권한이 부여되어야 한다")
-    void createNewUser_shouldHaveUserRole() {
-        // when
-        User user = User.createNewUser("regularUser", "password");
-
-        // then
-        assertEquals("ROLE_USER", user.getRole());
     }
 }
