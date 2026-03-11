@@ -7,7 +7,7 @@ import kr.gilmok.auth.auth.dto.LoginRequest;
 import kr.gilmok.auth.auth.entity.User;
 import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.UserRepository;
-import kr.gilmok.auth.global.Jwt.JwtProvider;
+import kr.gilmok.auth.global.Jwt.TokenProvider;
 import kr.gilmok.common.dto.AuthUserDto;
 import kr.gilmok.common.exception.CustomException;
 import kr.gilmok.common.security.CustomUserDetails;
@@ -44,7 +44,7 @@ public class AuthServiceLoginTest {
     private AuthenticationManager authenticationManager;
 
     @Mock
-    private JwtProvider jwtProvider;
+    private TokenProvider tokenProvider;
 
     @Mock
     private AuthSessionService authSessionService;
@@ -66,7 +66,8 @@ public class AuthServiceLoginTest {
         LoginRequest request = new LoginRequest(username, password);
 
         User user = User.createNewUser(username, "encodedPassword");
-        AuthUserDto dto = new AuthUserDto(user.getId(), user.getUsername(), user.getPasswordHash(), user.getRole(), user.getStatus().name());
+        AuthUserDto dto = new AuthUserDto(user.getId(), user.getUsername(), user.getPasswordHash(), user.getRole(),
+                user.getStatus().name());
         CustomUserDetails userDetails = new CustomUserDetails(dto);
 
         // (1) Security 인증 모킹
@@ -76,8 +77,8 @@ public class AuthServiceLoginTest {
         // 2. 실제 서비스 로직이 사용하는 getReferenceById를 모킹 (프록시 객체 반환)
         given(userRepository.getReferenceById(user.getId())).willReturn(user);
 
-        given(jwtProvider.createAccessToken(user)).willReturn("access-token");
-        given(jwtProvider.createRefreshToken(user)).willReturn("refresh-token");
+        given(tokenProvider.createAccessToken(user)).willReturn("access-token");
+        given(tokenProvider.createRefreshToken(user)).willReturn("refresh-token");
         given(meterRegistry.counter(anyString())).willReturn(counter);
 
         // when

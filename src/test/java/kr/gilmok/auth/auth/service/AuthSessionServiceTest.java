@@ -3,7 +3,7 @@ package kr.gilmok.auth.auth.service;
 import kr.gilmok.auth.auth.entity.AuthSession;
 import kr.gilmok.auth.auth.entity.User;
 import kr.gilmok.auth.auth.repository.AuthSessionRepository;
-import kr.gilmok.auth.global.util.HashUtil;
+import kr.gilmok.auth.global.util.TokenHashEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,6 +32,9 @@ public class AuthSessionServiceTest {
 
     @Mock
     private AuthSessionRepository authSessionRepository;
+
+    @Mock
+    private TokenHashEncoder tokenHashEncoder;
 
     private User testUser;
 
@@ -68,9 +71,9 @@ public class AuthSessionServiceTest {
         AuthSession existingSession = createSession(testUser, ip, userAgent);
         activeSessions.add(existingSession);
 
-        given(authSessionRepository.findAllActiveSessionsByUser(testUser)).willReturn(activeSessions);
+        String hashedToken = "hashed-refresh-token";
+        given(tokenHashEncoder.encode(refreshToken)).willReturn(hashedToken);
 
-        // when
         authSessionService.saveSession(testUser, refreshToken, ip, userAgent);
 
         // then
@@ -78,7 +81,6 @@ public class AuthSessionServiceTest {
         assertThat(existingSession.getRevokedAt()).isEqualTo(AuthSessionRepository.ACTIVE_TIME);
 
         // upsert 호출 여부 검증
-        String hashedToken = HashUtil.hash(refreshToken);
         verify(authSessionRepository).upsertAuthSession(eq(testUser.getId()), eq(hashedToken), eq(ip), eq(userAgent),
                 any(), any(), eq(AuthSessionRepository.ACTIVE_TIME));
     }
@@ -102,7 +104,9 @@ public class AuthSessionServiceTest {
 
         given(authSessionRepository.findAllActiveSessionsByUser(testUser)).willReturn(activeSessions);
 
-        // when
+        String hashedToken = "hashed-refresh-token-new";
+        given(tokenHashEncoder.encode(refreshToken)).willReturn(hashedToken);
+
         authSessionService.saveSession(testUser, refreshToken, ip, userAgent);
 
         // then
@@ -113,7 +117,6 @@ public class AuthSessionServiceTest {
         assertThat(newestSession.getRevokedAt()).isEqualTo(LocalDateTime.of(1970, 1, 1, 0, 0));
 
         // upsert 호출 여부 검증
-        String hashedToken = HashUtil.hash(refreshToken);
         verify(authSessionRepository).upsertAuthSession(eq(testUser.getId()), eq(hashedToken), eq(ip), eq(userAgent),
                 any(), any(), eq(AuthSessionRepository.ACTIVE_TIME));
     }
@@ -135,7 +138,9 @@ public class AuthSessionServiceTest {
 
         given(authSessionRepository.findAllActiveSessionsByUser(testUser)).willReturn(activeSessions);
 
-        // when
+        String hashedToken = "hashed-refresh-token-new";
+        given(tokenHashEncoder.encode(refreshToken)).willReturn(hashedToken);
+
         authSessionService.saveSession(testUser, refreshToken, ip, userAgent);
 
         // then
@@ -144,7 +149,6 @@ public class AuthSessionServiceTest {
         assertThat(session2.getRevokedAt()).isEqualTo(LocalDateTime.of(1970, 1, 1, 0, 0));
 
         // upsert 호출 여부 검증
-        String hashedToken = HashUtil.hash(refreshToken);
         verify(authSessionRepository).upsertAuthSession(eq(testUser.getId()), eq(hashedToken), eq(ip), eq(userAgent),
                 any(), any(), eq(AuthSessionRepository.ACTIVE_TIME));
     }
