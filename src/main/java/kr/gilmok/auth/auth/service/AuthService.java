@@ -9,8 +9,8 @@ import kr.gilmok.auth.auth.entity.User;
 import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.AuthSessionRepository;
 import kr.gilmok.auth.auth.repository.UserRepository;
-import kr.gilmok.auth.global.Jwt.JwtProvider;
-import kr.gilmok.auth.global.util.HashUtil;
+import kr.gilmok.auth.global.Jwt.TokenProvider;
+import kr.gilmok.auth.global.util.TokenHashEncoder;
 import kr.gilmok.common.exception.CustomException;
 import kr.gilmok.common.exception.GlobalErrorCode;
 import kr.gilmok.common.security.CustomUserDetails;
@@ -37,7 +37,8 @@ public class AuthService {
     private final AuthSessionRepository authSessionRepository;
     private final AuthenticationManager authenticationManager;
     private final PasswordEncoder passwordEncoder;
-    private final JwtProvider jwtProvider;
+    private final TokenProvider tokenProvider;
+    private final TokenHashEncoder tokenHashEncoder;
     private final AuthSessionService authSessionService;
     private final MeterRegistry meterRegistry;
 
@@ -74,8 +75,7 @@ public class AuthService {
         try {
             // 1. Spring Security 표준 인증 시도
             authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(request.username(), request.password())
-            );
+                    new UsernamePasswordAuthenticationToken(request.username(), request.password()));
         } catch (AuthenticationException e) {
             // 2️⃣ 로그인 실패 메트릭 증가
             meterRegistry.counter("auth.login.failure").increment();
@@ -98,9 +98,9 @@ public class AuthService {
         User user = userRepository.getReferenceById(userId);
         user.updateLastLoginAt();
 
-        // 4. 토큰 발급
-        String accessToken = jwtProvider.createAccessToken(user);
-        String refreshToken = jwtProvider.createRefreshToken(user);
+        // 4. 토큰 발급 (DIP 적용)
+        String accessToken = tokenProvider.createAccessToken(user);
+        String refreshToken = tokenProvider.createRefreshToken(user);
 
         authSessionService.saveSession(user, refreshToken, ip, userAgent);
 
@@ -114,14 +114,12 @@ public class AuthService {
     @Transactional
     public AuthTokenDto reissue(String oldRefreshToken, String ip, String userAgent) {
         // 1. 토큰 해싱 후 DB 조회
-        String oldHash = HashUtil.hash(oldRefreshToken);
+        String oldHash = tokenHashEncoder.encode(oldRefreshToken);
         AuthSession oldSession = authSessionRepository.findByRefreshTokenHashAndActive(oldHash)
                 .orElseThrow(() -> new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN));
 
-        // 2. 만료 여부 확인
-        if (oldSession.getExpiresAt().isBefore(LocalDateTime.now())) {
-            throw new CustomException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
-        }
+        // 2. 만료 여부 확인 (DDD 관점: 서비스 레이어가 아닌 엔티티에 행위 위임)
+        oldSession.validateExpiration(LocalDateTime.now());
 
         // 3. 기존 세션 무효화
         oldSession.revoke();
@@ -129,8 +127,8 @@ public class AuthService {
 
         // 4. 새로운 토큰 및 세션 생성
         User user = oldSession.getUser();
-        String newAccessToken = jwtProvider.createAccessToken(user);
-        String newRefreshToken = jwtProvider.createRefreshToken(user);
+        String newAccessToken = tokenProvider.createAccessToken(user);
+        String newRefreshToken = tokenProvider.createRefreshToken(user);
 
         authSessionService.saveSession(user, newRefreshToken, ip, userAgent);
 

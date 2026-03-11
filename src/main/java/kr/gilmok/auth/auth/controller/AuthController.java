@@ -46,6 +46,9 @@ public class AuthController {
                                                             HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         String ip = httpRequest.getRemoteAddr();
         String userAgent = httpRequest.getHeader("User-Agent");
+        if (userAgent == null || userAgent.isBlank()) {
+            userAgent = "Unknown";
+        }
 
         AuthTokenDto tokenDto = authService.login(request, ip, userAgent);
 
@@ -65,6 +68,9 @@ public class AuthController {
 
         String ip = httpRequest.getRemoteAddr();
         String userAgent = httpRequest.getHeader("User-Agent");
+        if (userAgent == null || userAgent.isBlank()) {
+            userAgent = "Unknown";
+        }
 
         AuthTokenDto tokenDto = authService.reissue(refreshToken, ip, userAgent);
 
