@@ -1,4 +1,4 @@
-package kr.gilmok.auth.global.Jwt;
+package kr.gilmok.auth.global.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

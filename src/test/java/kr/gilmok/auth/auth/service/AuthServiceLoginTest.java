@@ -7,7 +7,7 @@ import kr.gilmok.auth.auth.dto.LoginRequest;
 import kr.gilmok.auth.auth.entity.User;
 import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.UserRepository;
-import kr.gilmok.auth.global.Jwt.TokenProvider;
+import kr.gilmok.auth.global.jwt.TokenProvider;
 import kr.gilmok.common.dto.AuthUserDto;
 import kr.gilmok.common.exception.CustomException;
 import kr.gilmok.common.security.CustomUserDetails;

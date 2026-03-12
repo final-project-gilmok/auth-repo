@@ -9,7 +9,7 @@ import kr.gilmok.auth.auth.entity.User;
 import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.AuthSessionRepository;
 import kr.gilmok.auth.auth.repository.UserRepository;
-import kr.gilmok.auth.global.Jwt.TokenProvider;
+import kr.gilmok.auth.global.jwt.TokenProvider;
 import kr.gilmok.auth.global.util.TokenHashEncoder;
 import kr.gilmok.common.exception.CustomException;
 import kr.gilmok.common.exception.GlobalErrorCode;

@@ -1,4 +1,4 @@
-package kr.gilmok.auth.global.Jwt;
+package kr.gilmok.auth.global.jwt;
 
 import kr.gilmok.auth.auth.entity.User;
 
