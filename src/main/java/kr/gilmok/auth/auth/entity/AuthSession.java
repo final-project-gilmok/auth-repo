@@ -57,7 +57,7 @@ public class AuthSession {
 
     // 만료 여부 검증
     public void validateExpiration(LocalDateTime now) {
-        if (this.expiresAt.isBefore(now)) {
+        if (!this.expiresAt.isAfter(now)) {
             throw new CustomException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
         }
     }
