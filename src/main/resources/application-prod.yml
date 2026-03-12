@@ -28,12 +28,6 @@ spring:
         format_sql: false
         show_sql: false
 
-management:
-  otlp:
-    tracing:
-      endpoint: http://tempo:4317 # ← gRPC 포트
-      transport: grpc
-
 app:
   jwt:
     secret: ${JWT_SECRET}  # api-repo와 동일한 값!
