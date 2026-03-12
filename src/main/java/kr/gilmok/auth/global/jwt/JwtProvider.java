@@ -1,4 +1,4 @@
-package kr.gilmok.auth.global.Jwt;
+package kr.gilmok.auth.global.jwt;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -14,7 +14,7 @@ import java.security.Key;
 import java.util.Date;
 
 @Component
-public class JwtProvider {
+public class JwtProvider implements TokenProvider {
 
     @Value("${app.jwt.secret}")
     private String secretKey;
@@ -28,8 +28,11 @@ public class JwtProvider {
     private Key key;
 
     @PostConstruct
-    protected void init() {this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));}
+    protected void init() {
+        this.key = Keys.hmacShaKeyFor(secretKey.getBytes(StandardCharsets.UTF_8));
+    }
 
+    @Override
     public String createAccessToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getUsername());
         claims.put("id", user.getId());
@@ -39,6 +42,7 @@ public class JwtProvider {
         return buildToken(claims, accessExpTime);
     }
 
+    @Override
     public String createRefreshToken(User user) {
         Claims claims = Jwts.claims().setSubject(user.getUsername());
         claims.put("id", user.getId());

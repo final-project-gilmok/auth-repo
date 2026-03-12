@@ -67,7 +67,7 @@ public class AuthServiceSignupTest {
             authService.signup(request);
         });
 
-        // ErrorCode 규격 확인 (U001: DUPLICATE_USERNAME)
+        // ErrorCode 규격 확인 (AU001: DUPLICATE_USERNAME)
         assertEquals(AuthErrorCode.DUPLICATE_USERNAME.getCode(), exception.getErrorCode().getCode());
         assertEquals(AuthErrorCode.DUPLICATE_USERNAME.getMessage(), exception.getMessage());
     }
@@ -83,7 +83,7 @@ public class AuthServiceSignupTest {
             authService.signup(request);
         });
 
-        assertEquals("U002", exception.getErrorCode().getCode());
-        assertEquals("비밀번호가 일치하지 않습니다.", exception.getMessage());
+        assertEquals(AuthErrorCode.PASSWORD_MISMATCH.getCode(), exception.getErrorCode().getCode());
+        assertEquals(AuthErrorCode.PASSWORD_MISMATCH.getMessage(), exception.getMessage());
     }
 }

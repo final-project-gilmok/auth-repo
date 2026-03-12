@@ -5,8 +5,8 @@ import kr.gilmok.auth.auth.entity.AuthSession;
 import kr.gilmok.auth.auth.entity.User;
 import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.AuthSessionRepository;
-import kr.gilmok.auth.global.Jwt.JwtProvider;
-import kr.gilmok.auth.global.util.HashUtil;
+import kr.gilmok.auth.global.jwt.TokenProvider;
+import kr.gilmok.auth.global.util.TokenHashEncoder;
 import kr.gilmok.common.exception.CustomException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,7 +23,6 @@ import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -38,7 +37,10 @@ public class AuthServiceReissueTest {
     private AuthSessionRepository authSessionRepository;
 
     @Mock
-    private JwtProvider jwtProvider;
+    private TokenProvider tokenProvider;
+
+    @Mock
+    private TokenHashEncoder tokenHashEncoder;
 
     @Mock
     private AuthSessionService authSessionService;
@@ -52,7 +54,7 @@ public class AuthServiceReissueTest {
         ReflectionTestUtils.setField(authService, "accessExpTime", 3600000L);
 
         testUser = User.createNewUser("testuser", "password");
-        validSession = createSession(testUser, HashUtil.hash("old-refresh-token"), "127.0.0.1", "TestAgent",
+        validSession = createSession(testUser, "hashed-old-refresh-token", "127.0.0.1", "TestAgent",
                 LocalDateTime.now().plusDays(14));
     }
 
@@ -78,16 +80,17 @@ public class AuthServiceReissueTest {
     void reissue_success() {
         // given
         String oldRefreshToken = "old-refresh-token";
-        String hashedToken = HashUtil.hash(oldRefreshToken);
+        String hashedToken = "hashed-old-refresh-token";
         String newAccessToken = "new-access-token";
         String newRefreshToken = "new-refresh-token";
         String ip = "192.168.0.2";
         String userAgent = "NewAgent";
 
+        given(tokenHashEncoder.encode(oldRefreshToken)).willReturn(hashedToken);
         given(authSessionRepository.findByRefreshTokenHashAndActive(hashedToken))
                 .willReturn(Optional.of(validSession));
-        given(jwtProvider.createAccessToken(testUser)).willReturn(newAccessToken);
-        given(jwtProvider.createRefreshToken(testUser)).willReturn(newRefreshToken);
+        given(tokenProvider.createAccessToken(testUser)).willReturn(newAccessToken);
+        given(tokenProvider.createRefreshToken(testUser)).willReturn(newRefreshToken);
 
         // when
         assertThat(validSession.getRevokedAt()).isEqualTo(AuthSessionRepository.ACTIVE_TIME);
@@ -109,7 +112,9 @@ public class AuthServiceReissueTest {
     void reissue_fail_invalidToken() {
         // given
         String invalidToken = "invalid-token";
-        given(authSessionRepository.findByRefreshTokenHashAndActive(any()))
+        String hashedToken = "hashed-invalid-token";
+        given(tokenHashEncoder.encode(invalidToken)).willReturn(hashedToken);
+        given(authSessionRepository.findByRefreshTokenHashAndActive(hashedToken))
                 .willReturn(Optional.empty());
 
         // when & then
@@ -124,10 +129,11 @@ public class AuthServiceReissueTest {
     void reissue_fail_expiredToken() {
         // given
         String expiredToken = "expired-token";
-        String hashedToken = HashUtil.hash(expiredToken);
+        String hashedToken = "hashed-expired-token";
         AuthSession expiredSession = createSession(testUser, hashedToken, "127.0.0.1", "TestAgent",
                 LocalDateTime.now().minusDays(1));
 
+        given(tokenHashEncoder.encode(expiredToken)).willReturn(hashedToken);
         given(authSessionRepository.findByRefreshTokenHashAndActive(hashedToken))
                 .willReturn(Optional.of(expiredSession));
 
