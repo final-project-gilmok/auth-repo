@@ -71,6 +71,8 @@ public class AuthSessionServiceTest {
         AuthSession existingSession = createSession(testUser, ip, userAgent);
         activeSessions.add(existingSession);
 
+        given(authSessionRepository.findAllActiveSessionsByUser(testUser)).willReturn(activeSessions);
+
         String hashedToken = "hashed-refresh-token";
         given(tokenHashEncoder.encode(refreshToken)).willReturn(hashedToken);
 
