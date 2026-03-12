@@ -46,8 +46,8 @@ public class AuthController {
                                                             HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         String ip = httpRequest.getRemoteAddr();
         String userAgent = httpRequest.getHeader("User-Agent");
-        if (userAgent == null || userAgent.isBlank()) {
-            userAgent = "Unknown";
+        if (userAgent != null && userAgent.isBlank()) {
+            userAgent = null;
         }
 
         AuthTokenDto tokenDto = authService.login(request, ip, userAgent);
