@@ -83,7 +83,7 @@ public class AuthServiceSignupTest {
             authService.signup(request);
         });
 
-        assertEquals("AU002", exception.getErrorCode().getCode());
-        assertEquals("비밀번호가 일치하지 않습니다.", exception.getMessage());
+        assertEquals(AuthErrorCode.PASSWORD_MISMATCH.getCode(), exception.getErrorCode().getCode());
+        assertEquals(AuthErrorCode.PASSWORD_MISMATCH.getMessage(), exception.getMessage());
     }
 }
