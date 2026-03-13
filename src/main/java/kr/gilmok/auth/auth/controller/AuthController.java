@@ -16,7 +16,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
-import kr.gilmok.auth.global.util.ClientIpUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,11 +44,8 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Validated @RequestBody LoginRequest request,
             HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-        String ip = ClientIpUtils.extract(httpRequest);
-        String userAgent = httpRequest.getHeader("User-Agent");
-        if (userAgent != null && userAgent.isBlank()) {
-            userAgent = null;
-        }
+        String ip = httpRequest.getRemoteAddr();
+        String userAgent = normalizeUserAgent(httpRequest.getHeader("User-Agent"));
 
         AuthTokenDto tokenDto = authService.login(request, ip, userAgent);
 
@@ -67,11 +63,8 @@ public class AuthController {
             throw new CustomException(AuthErrorCode.NO_REFRESH_TOKEN);
         }
 
-        String ip = ClientIpUtils.extract(httpRequest);
-        String userAgent = httpRequest.getHeader("User-Agent");
-        if (userAgent == null || userAgent.isBlank()) {
-            userAgent = "Unknown";
-        }
+        String ip = httpRequest.getRemoteAddr();
+        String userAgent = normalizeUserAgent(httpRequest.getHeader("User-Agent"));
 
         AuthTokenDto tokenDto = authService.reissue(refreshToken, ip, userAgent);
 
@@ -98,6 +91,13 @@ public class AuthController {
                 .maxAge(expTime / 1000)
                 .sameSite("Lax")
                 .build();
+    }
+
+    private String normalizeUserAgent(String userAgent) {
+        if (userAgent == null || userAgent.isBlank()) {
+            return "Unknown";
+        }
+        return userAgent;
     }
 
     private LoginResponse toLoginResponse(AuthTokenDto tokenDto) {
