@@ -1,14 +1,19 @@
 package kr.gilmok.auth.auth.entity;
 
 import jakarta.persistence.*;
+import kr.gilmok.auth.auth.exception.AuthErrorCode;
+import kr.gilmok.common.exception.CustomException;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
-@Table(name = "auth_sessions", uniqueConstraints = {
+@Table(name = "auth_sessions", indexes = {
+        @Index(name = "idx_auth_session_hash", columnList = "refresh_token_hash")
+}, uniqueConstraints = {
         @UniqueConstraint(name = "uk_auth_session_device", columnNames = {"user_id", "created_ip", "user_agent",
                 "revoked_at"})
 })
@@ -48,5 +53,18 @@ public class AuthSession {
     // RTR: 기존 세션 무효화
     public void revoke() {
         this.revokedAt = LocalDateTime.now();
+    }
+
+    // 만료 여부 검증
+    public void validateExpiration(LocalDateTime now) {
+        if (!this.expiresAt.isAfter(now)) {
+            throw new CustomException(AuthErrorCode.REFRESH_TOKEN_EXPIRED);
+        }
+    }
+
+    // 동일 기기 여부 검증
+    public boolean isSameDevice(String ip, String userAgent) {
+        return Objects.equals(this.createdIp, ip) &&
+                Objects.equals(this.userAgent, userAgent);
     }
 }

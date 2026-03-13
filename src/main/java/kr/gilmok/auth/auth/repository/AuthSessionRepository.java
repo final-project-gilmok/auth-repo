@@ -33,6 +33,8 @@ public interface AuthSessionRepository extends JpaRepository<AuthSession, Long> 
     }
 
     // Native Query를 이용한 DB 레벨의 Upsert (동시성 완벽 제어)
+    // 참고: `ON DUPLICATE KEY UPDATE`는 MySQL 전용 문법임
+    // 추후 PostgreSQL 등 다른 RDBMS로 마이그레이션 시, 수정이 필요함
     @Modifying
     @Query(value = """
             INSERT INTO auth_sessions (user_id, refresh_token_hash, created_ip, user_agent, issued_at, last_used_at, expires_at, revoked_at)
