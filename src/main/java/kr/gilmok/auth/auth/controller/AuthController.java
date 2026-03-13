@@ -43,8 +43,8 @@ public class AuthController {
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Validated @RequestBody LoginRequest request,
-                                                            HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
-        String ip = httpRequest.getRemoteAddr();
+            HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+        String ip = extractClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
         if (userAgent != null && userAgent.isBlank()) {
             userAgent = null;
@@ -66,7 +66,7 @@ public class AuthController {
             throw new CustomException(AuthErrorCode.NO_REFRESH_TOKEN);
         }
 
-        String ip = httpRequest.getRemoteAddr();
+        String ip = extractClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
         if (userAgent == null || userAgent.isBlank()) {
             userAgent = "Unknown";
@@ -104,5 +104,19 @@ public class AuthController {
                 tokenDto.accessTokenExpiresIn(),
                 tokenDto.username(),
                 tokenDto.role());
+    }
+
+    private String extractClientIp(HttpServletRequest request) {
+        String ip = request.getHeader("X-Forwarded-For");
+        if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getHeader("X-Real-IP");
+        }
+        if (ip == null || ip.isBlank() || "unknown".equalsIgnoreCase(ip)) {
+            ip = request.getRemoteAddr();
+        }
+        if (ip != null && ip.contains(",")) {
+            ip = ip.split(",")[0].trim();
+        }
+        return ip;
     }
 }
