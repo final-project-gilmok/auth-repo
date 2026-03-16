@@ -1,5 +1,10 @@
 server:
   port: 9000
+  forward-headers-strategy: native
+  tomcat:
+    remoteip:
+      remote-ip-header: x-forwarded-for
+      protocol-header: x-forwarded-proto
 
 spring:
   application:
