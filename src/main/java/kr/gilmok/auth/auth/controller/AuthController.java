@@ -1,5 +1,7 @@
 package kr.gilmok.auth.auth.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import kr.gilmok.auth.auth.dto.AuthTokenDto;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
+@Tag(name = "Auth", description = "인증 API (회원가입, 로그인, 토큰 재발급)")
 public class AuthController {
 
     private final AuthService authService;
@@ -33,6 +36,11 @@ public class AuthController {
     private long refreshExpTime;
 
     @PostMapping("/signup")
+    @Operation(summary = "회원가입", description = "새 계정을 생성합니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "가입 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패 또는 중복 아이디")
+    })
     public ResponseEntity<ApiResponse<String>> signup(@Validated @RequestBody SignupRequest request) {
         authService.signup(request);
 
@@ -42,6 +50,12 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "로그인", description = "아이디/비밀번호로 로그인하고 access·refresh 토큰을 쿠키로 발급합니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "아이디/비밀번호 불일치")
+    })
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Validated @RequestBody LoginRequest request,
                                                             HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         String ip = httpRequest.getRemoteAddr();
@@ -58,6 +72,11 @@ public class AuthController {
     }
 
     @PostMapping("/reissue")
+    @Operation(summary = "토큰 재발급", description = "refreshToken 쿠키로 access·refresh 토큰을 재발급합니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "재발급 성공"),
+            @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "refreshToken 없음 또는 만료/무효")
+    })
     public ResponseEntity<ApiResponse<LoginResponse>> reissue(
             @CookieValue(value = "refreshToken", required = false) String refreshToken,
             HttpServletRequest httpRequest,
