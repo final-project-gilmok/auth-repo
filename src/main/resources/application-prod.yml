@@ -29,6 +29,8 @@ spring:
         show_sql: false
 
 app:
+  swagger:
+    enabled: false  # prod에서는 Swagger 미노출
   jwt:
     secret: ${JWT_SECRET}  # api-repo와 동일한 값!
     access-expiration-ms: ${JWT_ACCESS_EXPIRATION_MS:1800000}
