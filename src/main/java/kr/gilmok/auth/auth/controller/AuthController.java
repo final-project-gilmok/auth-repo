@@ -57,12 +57,9 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "아이디/비밀번호 불일치")
     })
     public ResponseEntity<ApiResponse<LoginResponse>> login(@Validated @RequestBody LoginRequest request,
-                                                            HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
+            HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         String ip = httpRequest.getRemoteAddr();
-        String userAgent = httpRequest.getHeader("User-Agent");
-        if (userAgent != null && userAgent.isBlank()) {
-            userAgent = null;
-        }
+        String userAgent = normalizeUserAgent(httpRequest.getHeader("User-Agent"));
 
         AuthTokenDto tokenDto = authService.login(request, ip, userAgent);
 
@@ -86,10 +83,7 @@ public class AuthController {
         }
 
         String ip = httpRequest.getRemoteAddr();
-        String userAgent = httpRequest.getHeader("User-Agent");
-        if (userAgent == null || userAgent.isBlank()) {
-            userAgent = "Unknown";
-        }
+        String userAgent = normalizeUserAgent(httpRequest.getHeader("User-Agent"));
 
         AuthTokenDto tokenDto = authService.reissue(refreshToken, ip, userAgent);
 
@@ -116,6 +110,13 @@ public class AuthController {
                 .maxAge(expTime / 1000)
                 .sameSite("Lax")
                 .build();
+    }
+
+    private String normalizeUserAgent(String userAgent) {
+        if (userAgent == null || userAgent.isBlank()) {
+            return "Unknown";
+        }
+        return userAgent;
     }
 
     private LoginResponse toLoginResponse(AuthTokenDto tokenDto) {
