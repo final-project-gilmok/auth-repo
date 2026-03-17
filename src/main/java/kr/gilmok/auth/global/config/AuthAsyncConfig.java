@@ -21,12 +21,12 @@ public class AuthAsyncConfig implements WebMvcConfigurer {
         executor.setRejectedExecutionHandler((r, e) -> {
             throw new CustomException(AuthErrorCode.SERVER_BUSY);
         });
-        executor.initialize();
         return executor;
     }
 
     @Override
     public void configureAsyncSupport(AsyncSupportConfigurer configurer) {
+        configurer.setDefaultTimeout(30000);
         configurer.setTaskExecutor(authTaskExecutor());
     }
 }
