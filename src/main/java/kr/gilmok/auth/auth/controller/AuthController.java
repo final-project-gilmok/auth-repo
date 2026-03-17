@@ -21,6 +21,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.Callable;
+
 @RestController
 @RequestMapping("/auth")
 @RequiredArgsConstructor
@@ -41,12 +43,14 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "201", description = "가입 성공"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패 또는 중복 아이디")
     })
-    public ResponseEntity<ApiResponse<String>> signup(@Validated @RequestBody SignupRequest request) {
-        authService.signup(request);
+    public Callable<ResponseEntity<ApiResponse<String>>> signup(@Validated @RequestBody SignupRequest request) {
+        return () -> {
+            authService.signup(request);
 
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ApiResponse.success("회원가입 완료"));
+            return ResponseEntity
+                    .status(HttpStatus.CREATED)
+                    .body(ApiResponse.success("회원가입 완료"));
+        };
     }
 
     @PostMapping("/login")
@@ -56,16 +60,18 @@ public class AuthController {
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "요청 값 검증 실패"),
             @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "아이디/비밀번호 불일치")
     })
-    public ResponseEntity<ApiResponse<LoginResponse>> login(@Validated @RequestBody LoginRequest request,
+    public Callable<ResponseEntity<ApiResponse<LoginResponse>>> login(@Validated @RequestBody LoginRequest request,
             HttpServletRequest httpRequest, HttpServletResponse httpResponse) {
         String ip = httpRequest.getRemoteAddr();
         String userAgent = normalizeUserAgent(httpRequest.getHeader("User-Agent"));
 
-        AuthTokenDto tokenDto = authService.login(request, ip, userAgent);
+        return () -> {
+            AuthTokenDto tokenDto = authService.login(request, ip, userAgent);
 
-        addTokenCookies(httpResponse, tokenDto);
+            addTokenCookies(httpResponse, tokenDto);
 
-        return ResponseEntity.ok(ApiResponse.success(toLoginResponse(tokenDto)));
+            return ResponseEntity.ok(ApiResponse.success(toLoginResponse(tokenDto)));
+        };
     }
 
     @PostMapping("/reissue")
