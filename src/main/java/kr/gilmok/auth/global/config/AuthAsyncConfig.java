@@ -1,5 +1,7 @@
 package kr.gilmok.auth.global.config;
 
+import kr.gilmok.auth.auth.exception.AuthErrorCode;
+import kr.gilmok.common.exception.CustomException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -16,6 +18,9 @@ public class AuthAsyncConfig implements WebMvcConfigurer {
         executor.setMaxPoolSize(20);
         executor.setQueueCapacity(100);
         executor.setThreadNamePrefix("auth-async-");
+        executor.setRejectedExecutionHandler((r, e) -> {
+            throw new CustomException(AuthErrorCode.SERVER_BUSY);
+        });
         executor.initialize();
         return executor;
     }
