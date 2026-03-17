@@ -9,6 +9,8 @@ spring:
     username: ${SPRING_DATASOURCE_USERNAME}
     password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 50
 
   # [운영 Redis 설정] - 배포 시 환경 변수로 주입됨 (수정 금지)
   data:
