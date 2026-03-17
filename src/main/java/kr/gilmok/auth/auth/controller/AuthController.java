@@ -123,6 +123,7 @@ public class AuthController {
         return new LoginResponse(
                 tokenDto.accessTokenExpiresIn(),
                 tokenDto.username(),
-                tokenDto.role());
+                tokenDto.role(),
+                tokenDto.accessToken());
     }
 }

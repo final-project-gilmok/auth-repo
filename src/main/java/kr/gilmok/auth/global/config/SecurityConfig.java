@@ -30,8 +30,9 @@ public class SecurityConfig extends CommonSecurityConfig {
     @Override
     protected void configureRequestMatchers(
             AuthorizeHttpRequestsConfigurer<HttpSecurity>.AuthorizationManagerRequestMatcherRegistry auth) {
+        auth.requestMatchers("/v3/api-docs", "/v3/api-docs/**").permitAll();
         if (swaggerEnabled) {
-            auth.requestMatchers("/swagger-ui.html", "/swagger-ui/**", "/v3/api-docs", "/v3/api-docs/**").permitAll();
+            auth.requestMatchers("/swagger-ui.html", "/swagger-ui/**").permitAll();
         }
         auth
             .requestMatchers("/auth/signup", "/auth/login", "/auth/reissue").permitAll()
