@@ -3,6 +3,17 @@ name: Build & Push to GHCR
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'Deploy target (all, oci or aws)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - oci
+          - aws
 
 # GHCR에 이미지를 올리려면 쓰기 권한(packages: write)이 필요함
 permissions:
@@ -48,18 +59,29 @@ jobs:
       # 5. 이미지 빌드 & 푸시
       # 태그: ghcr.io/내아이디/프로젝트명:latest
       - name: Build and Push
+        id: build_push
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ${{ env.IMAGE_NAME }}:latest
 
-      # 6. deploy-repo에 신호 보내기 (Secret: GITOPS_TOKEN 필요)
-      - name: Trigger Deploy Repo
-        if: success()
+      # 6. deploy-repo에 신호 보내기 (OCI)
+      - name: Trigger Deploy Repo (OCI)
+        if: ${{ !cancelled() && steps.build_push.outcome == 'success' && (github.event_name == 'push' || inputs.target == 'all' || inputs.target == 'oci') }}
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ secrets.GITOPS_TOKEN }}
           repository: final-project-gilmok/deploy-repo
           event-type: update-image
-          client-payload: '{"image_tag": "latest", "image_url": "${{ env.IMAGE_NAME }}", "service_name": "auth-server"}'
+          client-payload: '{"image_tag": "latest", "image_url": "${{ env.IMAGE_NAME }}", "service_name": "auth-server", "target": "oci"}'
+
+      # 7. deploy-repo에 신호 보내기 (AWS)
+      - name: Trigger Deploy Repo (AWS)
+        if: ${{ !cancelled() && steps.build_push.outcome == 'success' && (github.event_name == 'push' || inputs.target == 'all' || inputs.target == 'aws') }}
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.GITOPS_TOKEN }}
+          repository: final-project-gilmok/deploy-repo
+          event-type: update-image
+          client-payload: '{"image_tag": "latest", "image_url": "${{ env.IMAGE_NAME }}", "service_name": "auth-server", "target": "aws"}'
