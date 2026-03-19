@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
+import java.util.UUID;
 
 @Component
 public class JwtProvider implements TokenProvider {
@@ -39,7 +40,7 @@ public class JwtProvider implements TokenProvider {
         claims.put("status", user.getStatus());
         claims.put("role", user.getRole());
 
-        return buildToken(claims, accessExpTime);
+        return buildToken(claims, accessExpTime, UUID.randomUUID().toString());
     }
 
     @Override
@@ -47,16 +48,42 @@ public class JwtProvider implements TokenProvider {
         Claims claims = Jwts.claims().setSubject(user.getUsername());
         claims.put("id", user.getId());
 
-        return buildToken(claims, refreshExpTime);
+        return buildToken(claims, refreshExpTime, null);
     }
 
-    private String buildToken(Claims claims, long expTime) {
+    // access token에만 jti가 존재하며, logout 시 blocklist 등록에 사용됨
+    public String getJti(String token) {
+        return parseClaims(token).getId();
+    }
+
+    // 토큰의 남은 유효시간(밀리초)을 반환함
+    // blocklist TTL 설정에 사용됨
+    public long getRemainingTtlMs(String token) {
+        Date expiration = parseClaims(token).getExpiration();
+        long remaining = expiration.getTime() - System.currentTimeMillis();
+        return Math.max(remaining, 0L);
+    }
+
+    private Claims parseClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
+    }
+
+    private String buildToken(Claims claims, long expTime, String jti) {
         Date now = new Date();
-        return Jwts.builder()
+        var builder = Jwts.builder()
                 .setClaims(claims)
                 .setIssuedAt(now)
                 .setExpiration(new Date(now.getTime() + expTime))
-                .signWith(key, SignatureAlgorithm.HS256)
-                .compact();
+                .signWith(key, SignatureAlgorithm.HS256);
+
+        if (jti != null) {
+            builder.setId(jti);
+        }
+
+        return builder.compact();
     }
 }
