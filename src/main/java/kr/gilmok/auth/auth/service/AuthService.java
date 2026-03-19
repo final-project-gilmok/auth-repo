@@ -9,10 +9,12 @@ import kr.gilmok.auth.auth.entity.User;
 import kr.gilmok.auth.auth.exception.AuthErrorCode;
 import kr.gilmok.auth.auth.repository.AuthSessionRepository;
 import kr.gilmok.auth.auth.repository.UserRepository;
+import kr.gilmok.auth.global.jwt.JwtProvider;
 import kr.gilmok.auth.global.jwt.TokenProvider;
 import kr.gilmok.auth.global.util.TokenHashEncoder;
 import kr.gilmok.common.exception.CustomException;
 import kr.gilmok.common.exception.GlobalErrorCode;
+import kr.gilmok.common.security.AccessTokenBlocklistRepository;
 import kr.gilmok.common.security.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,11 +40,13 @@ public class AuthService {
     private final UserRepository userRepository;
     private final AuthSessionRepository authSessionRepository;
     private final AuthenticationManager authenticationManager;
-    private final PasswordEncoder passwordEncoder;
-    private final TokenProvider tokenProvider;
     private final TokenHashEncoder tokenHashEncoder;
     private final AuthSessionService authSessionService;
     private final MeterRegistry meterRegistry;
+    private final AccessTokenBlocklistRepository accessTokenBlocklistRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtProvider jwtProvider;
+    private final TokenProvider tokenProvider;
 
     @Value("${app.jwt.access-expiration-ms}")
     private long accessExpTime;
@@ -80,15 +84,15 @@ public class AuthService {
             authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.username(), request.password()));
         } catch (AuthenticationException e) {
-            // 2️⃣ 로그인 실패 메트릭 증가
+            // 로그인 실패 메트릭 증가
             meterRegistry.counter("auth.login.failure").increment();
             log.warn("로그인 실패 - username: {}, reason: {}", request.username(), e.getMessage());
 
-            // 3️⃣ Spring Security의 예외를 우리의 CustomException으로 예쁘게 변환
+            // Spring Security의 예외를 우리의 CustomException으로 예쁘게 변환
             if (e instanceof UsernameNotFoundException || e.getCause() instanceof UsernameNotFoundException) {
-                throw new CustomException(AuthErrorCode.USER_NOT_FOUND); // U003
+                throw new CustomException(AuthErrorCode.USER_NOT_FOUND);
             } else if (e instanceof BadCredentialsException) {
-                throw new CustomException(AuthErrorCode.PASSWORD_MISMATCH); // U002
+                throw new CustomException(AuthErrorCode.PASSWORD_MISMATCH);
             }
 
             throw new CustomException(GlobalErrorCode.INVALID_USER);
@@ -108,7 +112,7 @@ public class AuthService {
 
         authSessionService.saveSession(user, refreshToken, ip, userAgent);
 
-        // 4️⃣ 로그인 및 세션 발급 완료 시 성공 메트릭 증가
+        // 로그인 및 세션 발급 완료 시 성공 메트릭 증가
         meterRegistry.counter("auth.login.success").increment();
         log.info("로그인 성공 - username: {}, ip: {}", user.getUsername(), ip);
 
@@ -126,7 +130,7 @@ public class AuthService {
                     return new CustomException(AuthErrorCode.INVALID_REFRESH_TOKEN);
                 });
 
-        // 2. 만료 여부 확인 (DDD 관점: 서비스 레이어가 아닌 엔티티에 행위 위임)
+        // 2. 만료 여부 확인 (DDD 관점: Entity에 행위 위임)
         oldSession.validateExpiration(LocalDateTime.now());
 
         // 3. 기존 세션 무효화
@@ -143,5 +147,36 @@ public class AuthService {
         log.info("토큰 재발급 성공 - username: {}, ip: {}", user.getUsername(), ip);
 
         return new AuthTokenDto(accessExpTime, newAccessToken, newRefreshToken, user.getUsername(), user.getRole());
+    }
+
+    @Transactional
+    public void logout(String accessToken, String refreshToken) {
+        // 1. refresh token 세션 revoke
+        if (refreshToken != null && !refreshToken.isBlank()) {
+            String hash = tokenHashEncoder.encode(refreshToken);
+            authSessionRepository.findByRefreshTokenHashAndActive(hash)
+                    .ifPresent(session -> {
+                        session.revoke();
+                        log.info("로그아웃 - refresh 세션 무효화 완료");
+                    });
+        }
+
+        // 2. access token jti 블랙리스트 등록
+        if (accessToken != null && !accessToken.isBlank()) {
+            try {
+                String jti = jwtProvider.getJti(accessToken);
+                long remainingTtlMs = jwtProvider.getRemainingTtlMs(accessToken);
+
+                if (jti != null && remainingTtlMs > 0) {
+                    accessTokenBlocklistRepository.block(jti, remainingTtlMs);
+                    log.info("로그아웃 - access token blocklist 등록 완료 (ttlMs: {})", remainingTtlMs);
+                }
+            } catch (Exception e) {
+                // 이미 만료된 토큰이거나 파싱 실패 시 무시 (이미 무효한 토큰이므로 등록 불요)
+                log.debug("로그아웃 - access token 파싱 실패 (이미 만료된 토큰일 수 있음): {}", e.getMessage());
+            }
+        }
+
+        log.info("로그아웃 처리 완료");
     }
 }

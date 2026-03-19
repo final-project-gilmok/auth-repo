@@ -98,6 +98,20 @@ public class AuthController {
         return ResponseEntity.ok(ApiResponse.success(toLoginResponse(tokenDto)));
     }
 
+    @PostMapping("/logout")
+    public ResponseEntity<ApiResponse<String>> logout(
+            @CookieValue(value = "accessToken", required = false) String accessToken,
+            @CookieValue(value = "refreshToken", required = false) String refreshToken,
+            HttpServletResponse httpResponse) {
+        authService.logout(accessToken, refreshToken);
+
+        // 쿠키 즉시 만료
+        httpResponse.addHeader(HttpHeaders.SET_COOKIE, expireCookie("accessToken").toString());
+        httpResponse.addHeader(HttpHeaders.SET_COOKIE, expireCookie("refreshToken").toString());
+
+        return ResponseEntity.ok(ApiResponse.success("로그아웃 완료"));
+    }
+
     private void addTokenCookies(HttpServletResponse response, AuthTokenDto tokenDto) {
         ResponseCookie accessTokenCookie = createTokenCookie("accessToken", tokenDto.accessToken(),
                 accessExpTime);
@@ -111,9 +125,19 @@ public class AuthController {
     private ResponseCookie createTokenCookie(String name, String value, long expTime) {
         return ResponseCookie.from(name, value)
                 .httpOnly(true)
-                .secure(false) // HTTPS 전용
+                .secure(false)
                 .path("/")
                 .maxAge(expTime / 1000)
+                .sameSite("Lax")
+                .build();
+    }
+
+    private ResponseCookie expireCookie(String name) {
+        return ResponseCookie.from(name, "")
+                .httpOnly(true)
+                .secure(false)
+                .path("/")
+                .maxAge(0)
                 .sameSite("Lax")
                 .build();
     }
