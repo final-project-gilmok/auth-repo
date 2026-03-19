@@ -15,9 +15,7 @@ spring:
   # [운영 Redis 설정] - 배포 시 환경 변수로 주입됨 (수정 금지)
   data:
     redis:
-      host: ${SPRING_DATA_REDIS_HOST}
-      port: ${SPRING_DATA_REDIS_PORT}
-      password: ${SPRING_DATA_REDIS_PASSWORD}
+      url: ${REDIS_URL}
       ssl:
         enabled: ${SPRING_DATA_REDIS_SSL_ENABLED:true} # 기본값 true
 
